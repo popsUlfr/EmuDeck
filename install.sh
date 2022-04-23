@@ -313,17 +313,43 @@ flatpak install flathub com.usebottles.bottles -y &>> ~/emudeck/emudeck.log
 
 #Cemu
 echo -e "Installing Cemu"
+# Add flatpak permissions
+flatpak override --user \
+	--filesystem="$toolsPath/cemu" \
+	--filesystem="$romsPath/wiiu" \
+	com.usebottles.bottles &>> ~/emudeck/emudeck.log
 
-FILE="${romsPath}/wiiu/Cemu.exe"
+cemu_version_file="$toolsPath/cemu/version"
+cemu_version_current=""
+cemu_dl_url="$(curl -sSL https://cemu.info | grep '<a\s[^>]*\bname\s*=\s*"download"' | sed -n 's|^.*\bhref="\([^"]\+\)".*$|\1|p')"
+cemu_bn="$(basename "$cemu_dl_url")"
+if [ -f "$cemu_version_file" ]; then
+	cemu_version_current="$(head -n 1 "$cemu_version_file")"
+fi
+if [ "$cemu_bn" != "$cemu_version_current" ]; then
+	echo -e "Downloading newer cemu release $cemu_bn"
+	curl -sSLo "$toolsPath/$cemu_bn" "$cemu_dl_url" &>> ~/emudeck/emudeck.log
+	rd="$(unzip -Z -1 "$toolsPath/$cemu_bn" | head -n 1)"
+	rd="${rd/%\/*/}"
+	mkdir -p "$toolsPath/cemu"
+	ln -sf . "$toolsPath/cemu/$rd" &>> ~/emudeck/emudeck.log
+	unzip -o "$toolsPath/$cemu_bn" -d "$toolsPath/cemu" &>> ~/emudeck/emudeck.log
+	rm -f "$toolsPath/cemu/$rd" &>> ~/emudeck/emudeck.log
+	echo "$cemu_bn" > "$cemu_version_file"
+	rm -f "$toolsPath/$cemu_bn" &>> ~/emudeck/emudeck.log
+fi
 
-if [ -f "$FILE" ]; then
-	echo "" &>> /dev/null
-else
-	curl https://cemu.info/releases/cemu_1.26.2.zip --output $romsPath/wiiu/cemu_1.26.2.zip &>> ~/emudeck/emudeck.log
-	unzip -o "$romsPath"/wiiu/cemu_1.26.2.zip -d "$romsPath"/wiiu/tmp &>> ~/emudeck/emudeck.log
-	mv "$romsPath"/wiiu/tmp/*/* "$romsPath"/wiiu &>> ~/emudeck/emudeck.log
-	rm -rf "$romsPath"/wiiu/tmp &>> ~/emudeck/emudeck.log
-	rm -f "$romsPath"/wiiu/cemu_1.26.2.zip &>> ~/emudeck/emudeck.log
+# Use a bottle to run cemu
+if ! flatpak run --command="bottles-cli" com.usebottles.bottles -j list bottles | \
+	jq -e '[.[].Name == "cemu"] | any' &>> /dev/null; then
+	echo -e "Setting up bottle for cemu, please be patient"
+	flatpak run --command="bottles-cli" com.usebottles.bottles new \
+		--bottle-name cemu \
+		--environment gaming &>> ~/emudeck/emudeck.log
+	flatpak run --command="bottles-cli" com.usebottles.bottles edit \
+		--bottle cemu --params sync:futex2 &>> ~/emudeck/emudeck.log
+	flatpak run --command="bottles-cli" com.usebottles.bottles edit \
+		--bottle cemu --params pulseaudio_latency:false &>> ~/emudeck/emudeck.log
 fi
 
 echo -e ""
@@ -559,7 +585,7 @@ if [ $doYuzu == true ]; then
 fi
 if [ $doCemu == true ]; then
 	echo "" &>> ~/emudeck/emudeck.log
-	rsync -avhp ~/dragoonDoriseTools/EmuDeck/configs/cemu/ "$romsPath"/wiiu &>> ~/emudeck/emudeck.log
+	rsync -avhp ~/dragoonDoriseTools/EmuDeck/configs/cemu/ "$toolsPath/cemu/" &>> ~/emudeck/emudeck.log
 fi
 if [ $doCxbxReloaded == true ]; then
 	echo "" &>> ~/emudeck/emudeck.log
@@ -781,7 +807,7 @@ echo "" > ~/emudeck/.finished
 echo -e "${GREEN}OK!${NONE}"
 clear
 
-text="`printf "<b>Done!</b>\n\nRemember to add your games here:\n<b>${romsPath}</b>\nAnd your Bios (PS1, PS2, Yuzu) here:\n<b>${biosPath}</b>\n\nOpen Steam Rom Manager to add your games to your SteamUI Interface.\n\n<b>Remember that Cemu games needs to be set in compatibility mode in SteamUI: Proton 7 by going into its Properties and then Compatibility</b>\n\nIf you encounter any problem please visit our Discord:\n<b>https://discord.gg/b9F7GpXtFP</b>\n\nTo Update EmuDeck in the future, just run this App again.\n\nEnjoy!"`"
+text="`printf "<b>Done!</b>\n\nRemember to add your games here:\n<b>${romsPath}</b>\nAnd your Bios (PS1, PS2, Yuzu) here:\n<b>${biosPath}</b>\n\nOpen Steam Rom Manager to add your games to your SteamUI Interface.\n\nIf you encounter any problem please visit our Discord:\n<b>https://discord.gg/b9F7GpXtFP</b>\n\nTo Update EmuDeck in the future, just run this App again.\n\nEnjoy!"`"
 
 zenity --question \
 		 --title="EmuDeck" \

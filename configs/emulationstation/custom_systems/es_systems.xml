@@ -10,4 +10,13 @@
         <platform>xbox</platform>
         <theme>xbox</theme>
     </system>
+    <system>
+        <name>wiiu</name>
+        <fullname>Nintendo Wii U</fullname>
+        <path>%ROMPATH%/wiiu</path>
+        <extension>.rpx .RPX .wud .WUD .wux .WUX</extension>
+        <command label="Cemu (Standalone)">%EMULATOR_CEMU% -f -g %ROM%</command>
+        <platform>wiiu</platform>
+        <theme>wiiu</theme>
+    </system>
 </systemList>
