@@ -71,7 +71,7 @@ mkdir -p dragoonDoriseTools/EmuDeck
 cd dragoonDoriseTools
 
 
-git clone https://github.com/dragoonDorise/EmuDeck.git ~/dragoonDoriseTools/EmuDeck &>> ~/emudeck/emudeck.log
+git clone https://github.com/popsUlfr/EmuDeck.git ~/dragoonDoriseTools/EmuDeck &>> ~/emudeck/emudeck.log
 FOLDER=~/dragoonDoriseTools/EmuDeck
 if [ -d "$FOLDER" ]; then
 	echo -e "${GREEN}OK!${NONE}"
